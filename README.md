@@ -1,5 +1,5 @@
 # scMetaIntegrator
-scMetaIntegrator: a meta-analysis approach to paired single-cell differential expression analysis
+scMetaIntegrator: a meta-analysis approach to paired single-cell differential expression analysis\
 Preprint:
 
 ## Goal
