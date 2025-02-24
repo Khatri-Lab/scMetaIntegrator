@@ -1,0 +1,109 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# install.packages("https://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.0.0.tar.gz", repos = NULL, type = "source")
+# BiocManager::install("multtest")
+```
+
+```{r}
+# devtools::document() ## RUN THIS https://stackoverflow.com/questions/36442136/exported-function-not-exported-correctly
+```
+
+
+
+```{r}
+library(scMetaIntegrator)
+library(Seurat)
+library(ifnb.SeuratData)
+library(MetaIntegrator)
+library(multtest)
+library(magrittr)
+```
+
+## Download data and update object to v5
+```{r}
+data("ifnb")
+ifnb=UpdateSeuratObject(ifnb)
+ifnb = NormalizeData(ifnb)
+```
+
+## generate pseudoDonors and unique sample ID
+```{r}
+ifnb@meta.data$pseudoDonor = rep(c(1,2,3), nrow(ifnb@meta.data)/2)[c(1:nrow(ifnb@meta.data))] ## randomly assign donor
+ifnb@meta.data$pseudoDonor = paste0("pseudoDonor_",ifnb@meta.data$pseudoDonor)
+ifnb@meta.data$sample = paste0(ifnb@meta.data$pseudoDonor,"_",ifnb@meta.data$stim)
+```
+
+
+## identify shared genes
+```{r}
+thresholdedGenes = thresholdGenesAcrossPairs(seuratObject = ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor", percentThreshold = 0.01)
+```
+
+
+## generate MI object
+```{r}
+# seuratObject = ifnb; uniqueSampleID = "sample"; pairingColumn = "pseudo_donor"; comparisonGroupColumn = "stim"; groupOne = "STIM"; groupTwo = "CTRL"; thresholdGenes = thresholdedGenes; completePairsOnly = FALSE
+
+scMIObj = generate_full_MA(
+  seuratObject = ifnb,
+  uniqueSampleID = "sample",
+  pairingColumn = "pseudoDonor",
+  comparisonGroupColumn = "stim",
+  groupOne = "STIM",
+  groupTwo = "CTRL",
+  thresholdGenes = thresholdedGenes
+)
+```
+
+## get detailed DE report
+```{r}
+scMI_output = scMIObj$metaAnalysis$pooledResults
+```
+
+
+## forrest plot of top deg gene
+```{r}
+topDEG = scMI_output[scMI_output$effectSizeFDR == 0 & scMI_output$tauSquared == 0,]
+topDEG = topDEG[order(topDEG$effectSize, decreasing = TRUE),]$gene[1]
+forestPlot(scMIObj, topDEG)
+```
+
+
+```{r}
+scMIObj = filterGenes(scMIObj, isLeaveOneOut = TRUE, FDRThresh = .0001)
+summarizeFilterResults(scMIObj, "FDR1e-04_es0_nStudies1_looaTRUE_hetero0")
+```
+
+## generate violin plots for gene expression in one sample
+```{r}
+violinPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1, labelColumn = 'stim')
+```
+
+## generate rocPlot for one sample
+```{r}
+rocPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1, title = "ROC plot for discovery psudoDonor_1, FDR: 0.0001")
+```
+
+## pooled ROC across all pseudoDonors
+```{r}
+pooledROCPlot(scMIObj, scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`)
+```
+
+```{r}
+test = forwardSearch(scMIObj, scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, yes.pos = NULL, yes.neg = NULL, forwardThresh = 0)
+```
+
+```{r}
+scMIObj$originalData$pseudoDonor_1$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1)
+scMIObj$originalData$pseudoDonor_2$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_2)
+scMIObj$originalData$pseudoDonor_3$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_3)
+```
+
+
+```{r}
+```
+
