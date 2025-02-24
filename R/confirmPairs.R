@@ -4,7 +4,7 @@
 #' @param uniqueSampleID Column in seurat metadata object of the unique sample ID
 #' @param pairingColumn Column in seurat metadata object that samples are paired on
 #' @return boolean TRUE if two samples per pair present, FALSE if not
-#'
+#' @export
 confirmPairs = function(seuratObject, uniqueSampleID = "sample", pairingColumn) {
   seuratObject@meta.data$pairing_column_fxn = seuratObject@meta.data[[pairingColumn]]
   seuratObject@meta.data$sample_fxn = seuratObject@meta.data[[uniqueSampleID]]
