@@ -9,7 +9,7 @@
 #' @param thresholdGenes Can include a vector of genes to include for analysis. If left empty, all genes will be considered
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return data.frame of differential expression output
-#'
+#' @export
 run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                     comparisonGroupColumn, groupOne = "Condition", groupTwo = "Control",
                     thresholdGenes = NULL, completePairsOnly = FALSE) {
@@ -32,7 +32,7 @@ run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
 #' @param thresholdGenes Can include a vector of genes to include for analysis. If left empty, all genes will be considered
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return metaObject of the processed analyses
-#'
+#' @export
 generate_full_MA = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                             comparisonGroupColumn, groupOne = "Condition",
                             groupTwo = "Control", thresholdGenes = NULL, completePairsOnly = FALSE) {

@@ -6,7 +6,7 @@
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @param percentThreshold Percentage of cells that should express the gene across each pair to be included
 #' @return Vector of genes that pass thresholds
-#'
+#' @export
 thresholdGenesAcrossPairs = function(seuratObject, uniqueSampleID = "sample",
                                      pairingColumn, percentThreshold = 0.01,
                                      completePairsOnly = FALSE) {
