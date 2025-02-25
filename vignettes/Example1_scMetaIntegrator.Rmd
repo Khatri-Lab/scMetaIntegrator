@@ -1,53 +1,69 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Example1_MetaAnalysis"
+author: "Kalani Ratnasiri"
+date: "2025-02-24"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Example1_MetaAnalysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r}
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+knitr::opts_chunk$set(fig.width=8, fig.height=6, warning = FALSE) 
+```
+
+## Install packages as necessary
+```{r installs, include = FALSE}
 # install.packages("https://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.0.0.tar.gz", repos = NULL, type = "source")
-# BiocManager::install("multtest")
 ```
 
-```{r}
-# devtools::document() ## RUN THIS https://stackoverflow.com/questions/36442136/exported-function-not-exported-correctly
-```
-
-```{r}
+```{r setup, message = FALSE}
 library(scMetaIntegrator)
 library(Seurat)
 library(ifnb.SeuratData)
 library(MetaIntegrator)
 library(multtest)
 library(magrittr)
-# for visualizing data
-library(ggplot2)
-library(EnhancedVolcano)
 ```
 
-## Download data and update object to v5
-```{r}
+## Step 0: Data Loading + Pre-processing
+To get data to work with, we are going to take a publicly available dataset through SeuratData. We will assign cells to 3 pseudo donors to have a variable to pair on. 
+```{r, message=FALSE}
 data("ifnb")
 ifnb<-UpdateSeuratObject(ifnb)
 ifnb = NormalizeData(ifnb)
-```
-
-## generate pseudopairs and unique sample ID
-```{r}
 ifnb@meta.data$pseudoDonor = rep(c(1,2,3), nrow(ifnb@meta.data)/2)[c(1:nrow(ifnb@meta.data))] ## randomly assign donor
 ifnb@meta.data$pseudoDonor = paste0("pseudoDonor_",ifnb@meta.data$pseudoDonor)
 ifnb@meta.data$sample = paste0(ifnb@meta.data$pseudoDonor,"_",ifnb@meta.data$stim)
 ```
 
 
-## identify shared genes
+## Step 1: Confirm pairing structure
+Next, we want to make sure that we have complete pairing in this dataset. 
 ```{r}
-thresholdedGenes = thresholdGenesAcrossPairs(seuratObject = ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor", percentThreshold = 0.01)
+confirmPairs(ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor")
+```
+
+## Step 2: Run thresholding for genes that are expressed across 1% of cells in each pairing. 
+```{r}
+thresholdedGenes = thresholdGenesAcrossPairs(
+  seuratObject = ifnb,
+  uniqueSampleID = "sample",
+  pairingColumn = "pseudoDonor",
+  percentThreshold = 0.01
+)
+length(thresholdedGenes)
 ```
 
 
-## Run scMI
-```{r}
-scMI_output = run_scMI(
+## Step 3: Now we want to run scMetaIntegrator and get the simplest DE output
+```{r runscMI}
+scMI_output = runscMI(
   seuratObject = ifnb,
   uniqueSampleID = "sample",
   pairingColumn = "pseudoDonor",
@@ -58,13 +74,19 @@ scMI_output = run_scMI(
 )
 ```
 
-## get overall DEGs
+## Step 4: Below are basic checks & visualizations of the output data
+```{r packages_to_visualize_data, message=FALSE}
+library(ggplot2)
+library(EnhancedVolcano)
+```
+
+### 4a: Get the number of significant DEGs
 ```{r}
 table(scMI_output$effectSizeFDR < 0.05)
 ```
 
 
-# Quick barplot of DEGs
+### 4b: Get a simple barplot of DEGs
 ```{r}
 scMI_output$direction = ifelse(scMI_output$effectSize > 0, "positive","negative")
 scMI_output$direction = ifelse(scMI_output$effectSize == 0, "0",scMI_output$direction)
@@ -76,7 +98,7 @@ ggplot(scMI_output, aes(x=significant, fill = direction)) +
 ```
 
 
-## Quick volcano plot of DEGs
+### 4b: Get a simple volcano plot of DEGs
 ```{r}
 EnhancedVolcano(scMI_output,
     lab = scMI_output$gene,
