@@ -82,6 +82,7 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
 #' @return seuratObject of data with complete pairs
 #'
 seuToMI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, comparisonGroupColumn = 'condition') {
+  dat_id = unique(seuratObject$pairingVar)
   # Initialize the MI object from the original data
   MI_obj1 = tinyMetaObject$originalData$PBMC.Study.1
   MI_obj1$pheno = seuratObject@meta.data
@@ -101,6 +102,7 @@ seuToMI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, comp
 
   # Set keys for the expression data
   MI_obj1$keys = rownames(MI_obj1$expr)
+  MI_obj1$formattedName = dat_id
   names(MI_obj1$keys) = rownames(MI_obj1$expr)
 
   # Validate the data object
