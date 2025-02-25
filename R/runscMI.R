@@ -60,7 +60,7 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
   names(seu_list) = pairList
 
   # Convert each subset into MI object
-  seu_list_MA = lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
+  seu_list_MA = future_lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
 
   message("Running meta-analysis")
 
