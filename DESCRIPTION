@@ -12,7 +12,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: MetaIntegrator, Seurat (>= 5.0.0), multtest, magrittr
 Depends: R (>= 4.0)
-Suggests: ggplot2, EnhancedVolcano
+Suggests: ggplot2, EnhancedVolcano, knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
 Packaged: 2025-02-24 22:13:01 UTC; kalanir

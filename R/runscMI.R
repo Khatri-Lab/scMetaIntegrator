@@ -11,10 +11,10 @@
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return data.frame of differential expression output
 #' @export
-run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
+runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                     comparisonGroupColumn, groupOne = "Condition", groupTwo = "Control",
                     thresholdGenes = NULL, completePairsOnly = FALSE) {
-  deg_out = generate_full_MA(seuratObject, uniqueSampleID, pairingColumn, comparisonGroupColumn,
+  deg_out = generateFullMA(seuratObject, uniqueSampleID, pairingColumn, comparisonGroupColumn,
                              groupOne = groupOne, groupTwo = groupTwo,
                              thresholdGenes = thresholdGenes, completePairsOnly = completePairsOnly)$metaAnalysis$pooledResults
 
@@ -34,7 +34,7 @@ run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return metaObject of the processed analyses
 #' @export
-generate_full_MA = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
+generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                             comparisonGroupColumn, groupOne = "Condition",
                             groupTwo = "Control", thresholdGenes = NULL, completePairsOnly = FALSE) {
   seuratObject@meta.data$groupVar = seuratObject@meta.data[[comparisonGroupColumn]]
@@ -60,12 +60,12 @@ generate_full_MA = function(seuratObject, uniqueSampleID = "sample", pairingColu
   names(seu_list) = pairList
 
   # Convert each subset into MI object
-  seu_list_MA = lapply(seu_list, seu_to_MI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
+  seu_list_MA = lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
 
   message("Running meta-analysis")
 
   # Format the MI objects and run meta-analysis
-  MI_obj_full = format_MI(seu_list_MA) %>% runMetaAnalysis()
+  MI_obj_full = formatMI(seu_list_MA) %>% runMetaAnalysis()
   MI_obj_full$metaAnalysis$pooledResults$gene = rownames(MI_obj_full$metaAnalysis$pooledResults)
   MI_obj_full$metaAnalysis$pooledResults$method = "scMI"
   MI_obj_full$metaAnalysis$pooledResults$effectSizeBF = p.adjust(MI_obj_full$metaAnalysis$pooledResults$effectSizePval, method = "bonferroni")
@@ -81,7 +81,7 @@ generate_full_MA = function(seuratObject, uniqueSampleID = "sample", pairingColu
 #' @param comparisonGroupColumn Column in seurat metadata object to use for DE comparisons
 #' @return seuratObject of data with complete pairs
 #'
-seu_to_MI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, comparisonGroupColumn = 'condition') {
+seuToMI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, comparisonGroupColumn = 'condition') {
   # Initialize the MI object from the original data
   MI_obj1 = tinyMetaObject$originalData$PBMC.Study.1
   MI_obj1$pheno = seuratObject@meta.data
@@ -122,7 +122,7 @@ seu_to_MI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, co
 #' @param listOfMetaIntegratorObjs list of MetaIntegrator datasetObjects
 #' @return MetaIntegrator metaObject
 #'
-format_MI = function(listOfMetaIntegratorObjs) {
+formatMI = function(listOfMetaIntegratorObjs) {
   completeMetaObject = list(originalData = list())
   for (i in seq_along(listOfMetaIntegratorObjs)) {
     completeMetaObject$originalData[[i]] = listOfMetaIntegratorObjs[[i]]$originalData$dat1
