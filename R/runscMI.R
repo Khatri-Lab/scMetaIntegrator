@@ -1,3 +1,4 @@
+
 #' Function that the full scMI pipeline and outputs simplified DE results
 #'
 #' @param seuratObject Seurat v5 Object
@@ -10,7 +11,7 @@
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return data.frame of differential expression output
 #' @export
-runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
+run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                     comparisonGroupColumn, groupOne = "Condition", groupTwo = "Control",
                     thresholdGenes = NULL, completePairsOnly = FALSE) {
   deg_out = generate_full_MA(seuratObject, uniqueSampleID, pairingColumn, comparisonGroupColumn,
