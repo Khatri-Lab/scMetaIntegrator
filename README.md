@@ -1,7 +1,6 @@
 # scMetaIntegrator
 scMetaIntegrator: a meta-analysis approach to paired single-cell differential expression analysis\
 Preprint: link will be available soon\
-Author: Kalani Ratnasiri
 
 ## Goal
 scMetaIntegrator aims to provide a method for differential expresion analysis that can handle paired scRNA-seq data. 
