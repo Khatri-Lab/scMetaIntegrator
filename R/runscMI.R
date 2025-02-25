@@ -10,7 +10,7 @@
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
 #' @return data.frame of differential expression output
 #' @export
-run_scMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
+runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                     comparisonGroupColumn, groupOne = "Condition", groupTwo = "Control",
                     thresholdGenes = NULL, completePairsOnly = FALSE) {
   deg_out = generate_full_MA(seuratObject, uniqueSampleID, pairingColumn, comparisonGroupColumn,
