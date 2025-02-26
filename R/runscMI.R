@@ -60,12 +60,18 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
   names(seu_list) = pairList
 
   # Convert each subset into MI object
-  seu_list_MA = future_lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
+  seu_list_MA = lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn)
 
   message("Running meta-analysis")
 
   # Format the MI objects and run meta-analysis
-  MI_obj_full = formatMI(seu_list_MA) %>% runMetaAnalysis()
+  if (.Platform$OS.type == "windows") {
+    MI_obj_full = formatMI(seu_list_MA)
+    MI_obj_full = runMetaAnalysis(MI_obj_full, maxCores = 1)
+  }
+  if (.Platform$OS.type != "windows") {
+    MI_obj_full = formatMI(seu_list_MA) %>% runMetaAnalysis()
+  }
   MI_obj_full$metaAnalysis$pooledResults$gene = rownames(MI_obj_full$metaAnalysis$pooledResults)
   MI_obj_full$metaAnalysis$pooledResults$method = "scMI"
   MI_obj_full$metaAnalysis$pooledResults$effectSizeBF = p.adjust(MI_obj_full$metaAnalysis$pooledResults$effectSizePval, method = "bonferroni")
