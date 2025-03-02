@@ -2,7 +2,7 @@
 % Please edit documentation in R/runscMI.R
 \name{runscMI}
 \alias{runscMI}
-\title{Function that the full scMI pipeline and outputs simplified DE results}
+\title{Function that runs the full scMI pipeline and outputs simplified DE results}
 \usage{
 runscMI(
   seuratObject,
@@ -36,5 +36,5 @@ runscMI(
 data.frame of differential expression output
 }
 \description{
-Function that the full scMI pipeline and outputs simplified DE results
+Function that runs the full scMI pipeline and outputs simplified DE results
 }

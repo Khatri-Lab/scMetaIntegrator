@@ -2,7 +2,7 @@
 % Please edit documentation in R/runscMI.R
 \name{generateFullMA}
 \alias{generateFullMA}
-\title{Function that the full scMI pipeline and outputs complete metaObject}
+\title{Function that runs the full scMI pipeline and outputs complete metaObject}
 \usage{
 generateFullMA(
   seuratObject,
@@ -36,5 +36,5 @@ generateFullMA(
 metaObject of the processed analyses
 }
 \description{
-Function that the full scMI pipeline and outputs complete metaObject
+Function that runs the full scMI pipeline and outputs complete metaObject
 }

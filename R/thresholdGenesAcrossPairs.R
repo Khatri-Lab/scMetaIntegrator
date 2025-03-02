@@ -22,7 +22,7 @@ thresholdGenesAcrossPairs = function(seuratObject, uniqueSampleID = "sample",
   pairGenes <- list()
   for (pairOne in pairList) {
     pairOneSrt <- subset(seuratObject, subset = pairing_column_fxn == pairOne)
-    pairOneSrt <- as.matrix(pairOneSrt@assays$RNA$counts)
+    pairOneSrt <- as.matrix(pairOneSrt@assays$RNA$counts)  %>% suppressWarnings()
     pairOneGenes <- pairOneSrt[rowSums(pairOneSrt > 0) > (percentThreshold * ncol(pairOneSrt)), , drop = FALSE]
     pairGenes[[pairOne]] <- rownames(pairOneGenes)
   }
