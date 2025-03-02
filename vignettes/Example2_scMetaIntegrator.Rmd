@@ -29,7 +29,6 @@ library(ifnb.SeuratData)
 library(MetaIntegrator)
 library(multtest)
 library(magrittr)
-library(future.apply)
 ```
 
 ## Step 0a: Data Loading + Pre-processing

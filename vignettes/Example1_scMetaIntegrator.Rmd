@@ -29,7 +29,7 @@ library(ifnb.SeuratData)
 library(MetaIntegrator)
 library(multtest)
 library(magrittr)
-library(future.apply)
+
 ## packages for extra visualization steps
 library(ggplot2)
 library(EnhancedVolcano)
