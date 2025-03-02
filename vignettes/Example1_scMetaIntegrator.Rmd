@@ -30,6 +30,9 @@ library(MetaIntegrator)
 library(multtest)
 library(magrittr)
 library(future.apply)
+## packages for extra visualization steps
+library(ggplot2)
+library(EnhancedVolcano)
 ```
 
 ## Step 0: Data Loading + Pre-processing
@@ -62,7 +65,8 @@ length(thresholdedGenes)
 ```
 
 
-## Step 3: Now we want to run scMetaIntegrator and get the simplest DE output
+## Step 3: Now we want to run scMetaIntegrator and get the simplest DE output.
+### For calculating effect size changes, groupOne is the group we're defining changes distinguishing these cells from groupTwo (usually the control sample)
 ```{r runscMI}
 scMI_output = runscMI(
   seuratObject = ifnb,
@@ -76,11 +80,6 @@ scMI_output = runscMI(
 ```
 
 ## Step 4: Below are basic checks & visualizations of the output data
-```{r packages_to_visualize_data, message=FALSE}
-library(ggplot2)
-library(EnhancedVolcano)
-```
-
 ### 4a: Get the number of significant DEGs
 ```{r}
 table(scMI_output$effectSizeFDR < 0.05)

@@ -1,5 +1,5 @@
 
-#' Function that the full scMI pipeline and outputs simplified DE results
+#' Function that runs the full scMI pipeline and outputs simplified DE results
 #'
 #' @param seuratObject Seurat v5 Object
 #' @param uniqueSampleID Column in seurat metadata object of the unique sample ID
@@ -19,10 +19,10 @@ runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                              thresholdGenes = thresholdGenes, completePairsOnly = completePairsOnly)$metaAnalysis$pooledResults
 
 
-  return(deg_out[,c("gene",'effectSize','effectSizeFDR','effectSizePval', "effectSizeBF")])
+  return(deg_out[,c("gene",'effectSize','effectSizeFDR','effectSizePval', "effectSizeBF", "numPairs")])
 }
 
-#' Function that the full scMI pipeline and outputs complete metaObject
+#' Function that runs the full scMI pipeline and outputs complete metaObject
 #'
 #' @param seuratObject Seurat v5 Object
 #' @param uniqueSampleID Column in seurat metadata object of the unique sample ID
@@ -69,6 +69,7 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
   MI_obj_full$metaAnalysis$pooledResults$gene = rownames(MI_obj_full$metaAnalysis$pooledResults)
   MI_obj_full$metaAnalysis$pooledResults$method = "scMI"
   MI_obj_full$metaAnalysis$pooledResults$effectSizeBF = p.adjust(MI_obj_full$metaAnalysis$pooledResults$effectSizePval, method = "bonferroni")
+  names(MI_obj_full$metaAnalysis$pooledResults)[names(MI_obj_full$metaAnalysis$pooledResults) == 'numStudies'] <- 'numPairs'
   return(MI_obj_full)
 }
 
@@ -89,9 +90,9 @@ seuToMI = function(seuratObject, thresholdGenes = NULL, groupOne, groupTwo, comp
 
   # Extract expression data, filtering by genes to keep if specified
   if (!is.null(thresholdGenes)) {
-    expr = as.matrix(seuratObject@assays[["RNA"]]$data[rownames(seuratObject@assays[["RNA"]]$data) %in% thresholdGenes, ])
+    expr = as.matrix(seuratObject@assays[["RNA"]]$data[rownames(seuratObject@assays[["RNA"]]$data) %in% thresholdGenes, ]) %>% suppressWarnings()
   } else {
-    expr = as.matrix(seuratObject@assays[["RNA"]]$data)
+    expr = as.matrix(seuratObject@assays[["RNA"]]$data) %>% suppressWarnings()
   }
 
   # Assign expression and class to MI object
