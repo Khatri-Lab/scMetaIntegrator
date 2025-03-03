@@ -73,9 +73,9 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
     MI_obj_full = formatMI(seu_list_MA) %>% runMetaAnalysis()
   }
   MI_obj_full$metaAnalysis$pooledResults$gene = rownames(MI_obj_full$metaAnalysis$pooledResults)
+  MI_obj_full$metaAnalysis$pooledResults$numPairs = MI_obj_full$metaAnalysis$pooledResults$numStudies
   MI_obj_full$metaAnalysis$pooledResults$method = "scMI"
   MI_obj_full$metaAnalysis$pooledResults$effectSizeBF = p.adjust(MI_obj_full$metaAnalysis$pooledResults$effectSizePval, method = "bonferroni")
-  names(MI_obj_full$metaAnalysis$pooledResults)[names(MI_obj_full$metaAnalysis$pooledResults) == 'numStudies'] <- 'numPairs'
   return(MI_obj_full)
 }
 
