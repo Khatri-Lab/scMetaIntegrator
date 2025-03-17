@@ -23,6 +23,8 @@ thresholdGenesAcrossPairs(
 \item{percentThreshold}{Percentage of cells that should express the gene across each pair to be included}
 
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
+
+\item{assay}{assay to use}
 }
 \value{
 Vector of genes that pass thresholds
