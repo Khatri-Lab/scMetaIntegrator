@@ -12,7 +12,8 @@ generateFullMA(
   groupOne = "Condition",
   groupTwo = "Control",
   thresholdGenes = NULL,
-  completePairsOnly = FALSE
+  completePairsOnly = FALSE,
+  assay_type = "RNA"
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ generateFullMA(
 \item{thresholdGenes}{Can include a vector of genes to include for analysis. If left empty, all genes will be considered}
 
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
+
+\item{assay_type}{assay to use}
 }
 \value{
 metaObject of the processed analyses

@@ -9,7 +9,8 @@ thresholdGenesAcrossPairs(
   uniqueSampleID = "sample",
   pairingColumn,
   percentThreshold = 0.01,
-  completePairsOnly = FALSE
+  completePairsOnly = FALSE,
+  assay = "RNA"
 )
 }
 \arguments{
