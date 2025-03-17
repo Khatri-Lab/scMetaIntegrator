@@ -13,7 +13,7 @@ generateFullMA(
   groupTwo = "Control",
   thresholdGenes = NULL,
   completePairsOnly = FALSE,
-  assay_type = "RNA"
+  assay = "RNA"
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ generateFullMA(
 
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
 
-\item{assay_type}{assay to use}
+\item{assay}{assay to use}
 }
 \value{
 metaObject of the processed analyses

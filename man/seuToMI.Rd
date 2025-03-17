@@ -9,7 +9,8 @@ seuToMI(
   thresholdGenes = NULL,
   groupOne,
   groupTwo,
-  comparisonGroupColumn = "condition"
+  comparisonGroupColumn = "condition",
+  assay = "RNA"
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ seuToMI(
 \item{groupTwo}{A second identity for comparison, ie control group}
 
 \item{comparisonGroupColumn}{Column in seurat metadata object to use for DE comparisons}
+
+\item{assay}{assay to use}
 }
 \value{
 seuratObject of data with complete pairs

@@ -32,13 +32,13 @@ runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
 #' @param groupTwo A second identity for comparison, ie control group
 #' @param thresholdGenes Can include a vector of genes to include for analysis. If left empty, all genes will be considered
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
-#' @param assay_type assay to use
+#' @param assay assay to use
 #' @return metaObject of the processed analyses
 #' @export
 generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                             comparisonGroupColumn, groupOne = "Condition",
                             groupTwo = "Control", thresholdGenes = NULL, completePairsOnly = FALSE,
-                          assay_type = "RNA") {
+                          assay = "RNA") {
   seuratObject@meta.data$groupVar = seuratObject@meta.data[[comparisonGroupColumn]]
   seuratObject = subset(seuratObject, subset = groupVar %in% c(groupOne, groupTwo))
   message("Generating full MA object")
@@ -62,7 +62,7 @@ generateFullMA = function(seuratObject, uniqueSampleID = "sample", pairingColumn
   names(seu_list) = pairList
 
   # Convert each subset into MI object
-  seu_list_MA = lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn, assay = assay_type)
+  seu_list_MA = lapply(seu_list, seuToMI, thresholdGenes = thresholdGenes, groupOne = groupOne, groupTwo = groupTwo, comparisonGroupColumn = comparisonGroupColumn, assay = assay)
 
   message("Running meta-analysis")
 
