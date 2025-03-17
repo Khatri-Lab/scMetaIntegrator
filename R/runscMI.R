@@ -9,14 +9,15 @@
 #' @param groupTwo A second identity for comparison, ie control group
 #' @param thresholdGenes Can include a vector of genes to include for analysis. If left empty, all genes will be considered
 #' @param completePairsOnly BOOL where TRUE subsets seuratObject to samples from only the complete pairs
+#' @param assay assay to use
 #' @return data.frame of differential expression output
 #' @export
 runscMI = function(seuratObject, uniqueSampleID = "sample", pairingColumn,
                     comparisonGroupColumn, groupOne = "Condition", groupTwo = "Control",
-                    thresholdGenes = NULL, completePairsOnly = FALSE) {
+                    thresholdGenes = NULL, completePairsOnly = FALSE, assay = "RNA") {
   deg_out = generateFullMA(seuratObject, uniqueSampleID, pairingColumn, comparisonGroupColumn,
                              groupOne = groupOne, groupTwo = groupTwo,
-                             thresholdGenes = thresholdGenes, completePairsOnly = completePairsOnly)$metaAnalysis$pooledResults
+                             thresholdGenes = thresholdGenes, completePairsOnly = completePairsOnly, assay = assay)$metaAnalysis$pooledResults
 
 
   return(deg_out[,c("gene",'effectSize','effectSizeFDR','effectSizePval', "effectSizeBF", "numPairs")])

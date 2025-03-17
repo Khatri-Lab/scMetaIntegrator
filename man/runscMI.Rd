@@ -12,7 +12,8 @@ runscMI(
   groupOne = "Condition",
   groupTwo = "Control",
   thresholdGenes = NULL,
-  completePairsOnly = FALSE
+  completePairsOnly = FALSE,
+  assay = "RNA"
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ runscMI(
 \item{thresholdGenes}{Can include a vector of genes to include for analysis. If left empty, all genes will be considered}
 
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
+
+\item{assay}{assay to use}
 }
 \value{
 data.frame of differential expression output
