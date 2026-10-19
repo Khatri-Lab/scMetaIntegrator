@@ -13,7 +13,9 @@ runscMI(
   groupTwo = "Control",
   thresholdGenes = NULL,
   completePairsOnly = FALSE,
-  assay = "RNA"
+  assay = "RNA",
+  maxCores = NULL,
+  runLeaveOneOut = FALSE
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ runscMI(
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
 
 \item{assay}{assay to use}
+
+\item{maxCores}{Number of cores passed to MetaIntegrator::runMetaAnalysis. NULL uses the MetaIntegrator default}
+
+\item{runLeaveOneOut}{BOOL passed to MetaIntegrator::runMetaAnalysis. FALSE (default) skips the extra leave-one-out meta-analyses.}
 }
 \value{
 data.frame of differential expression output

@@ -2,3 +2,4 @@
 *.Rproj
 *notes.txt
 *.DS_Store
+./docs

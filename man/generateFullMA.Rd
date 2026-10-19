@@ -13,7 +13,10 @@ generateFullMA(
   groupTwo = "Control",
   thresholdGenes = NULL,
   completePairsOnly = FALSE,
-  assay = "RNA"
+  assay = "RNA",
+  maxCores = NULL,
+  keepExpr = TRUE,
+  runLeaveOneOut = FALSE
 )
 }
 \arguments{
@@ -34,10 +37,24 @@ generateFullMA(
 \item{completePairsOnly}{BOOL where TRUE subsets seuratObject to samples from only the complete pairs}
 
 \item{assay}{assay to use}
+
+\item{maxCores}{Number of cores passed to MetaIntegrator::runMetaAnalysis. NULL uses the MetaIntegrator default}
+
+\item{keepExpr}{BOOL where FALSE drops the per-pair expression matrices from the returned object.
+Keep TRUE if the object will be used for plots or gene scores}
+
+\item{runLeaveOneOut}{BOOL passed to MetaIntegrator::runMetaAnalysis. TRUE runs the k
+leave-one-out meta-analyses needed by MetaIntegrator::filterGenes. FALSE (default) skips them.
+The pooled results are identical either way}
 }
 \value{
 metaObject of the processed analyses
 }
 \description{
-Function that runs the full scMI pipeline and outputs complete metaObject
+Memory-efficient implementation. The sparse expression layer and metadata are extracted
+once, the Seurat object is released, and only one pair at a time is converted to a dense
+matrix. The defaults return the same full metaObject as earlier versions (per-pair
+expression matrices and leave-one-out results included), so downstream MetaIntegrator
+functions such as \code{filterGenes(isLeaveOneOut = TRUE)}, \code{forestPlot},
+\code{calculateScore} and \code{pooledROCPlot} work unchanged.
 }
