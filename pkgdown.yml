@@ -1,0 +1,11 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  Example1_scMetaIntegrator: Example1_scMetaIntegrator.html
+  Example2_scMetaIntegrator: Example2_scMetaIntegrator.html
+  scMetaIntegrator: scMetaIntegrator.html
+last_built: 2026-10-19T20:42Z
+urls:
+  reference: https://khatri-lab.github.io/scMetaIntegrator/reference
+  article: https://khatri-lab.github.io/scMetaIntegrator/articles
