@@ -15,7 +15,11 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: MetaIntegrator, Seurat (>= 5.0.0), multtest
 Depends: R (>= 4.0)
-Suggests: ggplot2, ggrepel, ifnb.SeuratData, knitr, rmarkdown
-Remotes: satijalab/seurat-data
+Suggests: ggplot2, ggrepel, ifnb.SeuratData, knitr, rmarkdown, SeuratData
+Remotes: 
+    satijalab/seurat-data,
+    url::https://cran.r-project.org/src/contrib/Archive/COCONUT/COCONUT_1.0.2.tar.gz,
+    url::https://cran.r-project.org/src/contrib/Archive/MetaIntegrator/MetaIntegrator_2.1.3.tar.gz,
+    url::http://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.1.0.tar.gz
 VignetteBuilder: knitr
 NeedsCompilation: no
