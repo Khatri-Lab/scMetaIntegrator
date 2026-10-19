@@ -31,7 +31,11 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: |
+            any::pkgdown
+            local::.
+            COCONUT=url::https://cran.r-project.org/src/contrib/Archive/COCONUT/COCONUT_1.0.2.tar.gz
+            manhattanly=url::https://cran.r-project.org/src/contrib/Archive/manhattanly/manhattanly_0.3.0.tar.gz
           needs: website
 
       - name: Build site
