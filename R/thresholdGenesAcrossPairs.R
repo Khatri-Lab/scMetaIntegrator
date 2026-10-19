@@ -20,12 +20,12 @@ thresholdGenesAcrossPairs = function(seuratObject, uniqueSampleID = "sample",
   }
   seuratObject@meta.data$pairing_column_fxn = seuratObject@meta.data[[pairingColumn]]
   pairList = unique(seuratObject@meta.data$pairing_column_fxn)
-  pairGenes <- list()
+  pairGenes = list()
   for (pairOne in pairList) {
-    pairOneSrt <- subset(seuratObject, subset = pairing_column_fxn == pairOne)
-    pairOneSrt <- as.matrix(pairOneSrt@assays[[assay]]$counts)  %>% suppressWarnings()
-    pairOneGenes <- pairOneSrt[rowSums(pairOneSrt > 0) > (percentThreshold * ncol(pairOneSrt)), , drop = FALSE]
-    pairGenes[[pairOne]] <- rownames(pairOneGenes)
+    pairOneSrt = subset(seuratObject, subset = pairing_column_fxn == pairOne)
+    pairOneSrt = suppressWarnings(as.matrix(pairOneSrt@assays[[assay]]$counts))
+    pairOneGenes = pairOneSrt[rowSums(pairOneSrt > 0) > (percentThreshold * ncol(pairOneSrt)), , drop = FALSE]
+    pairGenes[[pairOne]] = rownames(pairOneGenes)
   }
   return(Reduce(intersect, pairGenes))
 }

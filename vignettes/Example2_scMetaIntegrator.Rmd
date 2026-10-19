@@ -1,26 +1,42 @@
 ---
-title: "Example2_MetaAnalysis"
+title: "Example 2: Full MetaIntegrator analysis with generateFullMA()"
 author: "Kalani Ratnasiri"
-date: "2025-02-24"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{multi-dataset}
+  %\VignetteIndexEntry{Example 2: Full MetaIntegrator analysis with generateFullMA()}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r chunk-options, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 8,
+  fig.height = 6,
+  warning    = FALSE
 )
-knitr::opts_chunk$set(fig.width=8, fig.height=6, warning = FALSE) 
 ```
 
-## Install packages as necessary
-```{r installs, include = FALSE}
-# install.packages("https://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.0.0.tar.gz", repos = NULL, type = "source")
-```
+## Overview
+
+Example 1 used `runscMI()` to get a table of differentially expressed genes (DEGs). This example uses `generateFullMA()`, which returns the full MetaIntegrator object. With the full object you can run any MetaIntegrator function on your scMI results, such as forest plots, gene signatures, gene scores and ROC curves.
+
+The example also shows what to do when the pairing is incomplete. We remove one sample on purpose, check the pairing, and keep only the complete pairs.
+
+| Step | Function | Purpose |
+|:--|:--|:--|
+| 1 to 2 | `NormalizeData()` and metadata setup | Prepare four pseudo donors and remove one sample to create an unpaired donor |
+| 3 to 4 | `confirmPairs()`, `completePairSubset()` | Detect and remove incomplete pairs |
+| 5 | `thresholdGenesAcrossPairs()` | Keep genes expressed in at least 1% of cells in every pair |
+| 6 | `generateFullMA()` | Build the full MetaIntegrator object |
+| 7 | `$metaAnalysis$pooledResults` | Get the detailed DE report |
+| 8 | MetaIntegrator functions | Forest plot, gene signature, gene scores and ROC curves |
+
+## Setup
+
+The example data come from the `ifnb.SeuratData` package. See Example 1 for the install command. Loading MetaIntegrator is required to run scMetaIntegrator.
 
 ```{r setup, message = FALSE}
 library(scMetaIntegrator)
@@ -28,104 +44,145 @@ library(Seurat)
 library(ifnb.SeuratData)
 library(MetaIntegrator)
 library(multtest)
-library(magrittr)
+
+## packages for the plots in step 5
+library(ggplot2)
+theme_set(theme_bw())
 ```
 
-## Step 0a: Data Loading + Pre-processing
-To get data to work with, we are going to take a publicly available dataset through SeuratData. We will assign cells to 4 pseudo donors to have a variable to pair on. 
-```{r, message=FALSE}
+## Step 1: Load and preprocess the data
+
+The `ifnb` dataset contains PBMCs that were stimulated with interferon beta (`STIM`) or left as controls (`CTRL`). The dataset does not record donors, so we assign each cell to one of four pseudo donors to have a variable to pair on. In your own data, use the real donor or patient ID.
+
+```{r load-data, message = FALSE}
 data("ifnb")
-ifnb<-UpdateSeuratObject(ifnb)
+ifnb = UpdateSeuratObject(ifnb)
 ifnb = NormalizeData(ifnb)
-ifnb@meta.data$pseudoDonor = rep(c(1,2,3,4), nrow(ifnb@meta.data)/2)[c(1:nrow(ifnb@meta.data))] ## randomly assign donor
-ifnb@meta.data$pseudoDonor = paste0("pseudoDonor_",ifnb@meta.data$pseudoDonor)
-ifnb@meta.data$sample = paste0(ifnb@meta.data$pseudoDonor,"_",ifnb@meta.data$stim)
+
+## assign cells to four pseudo donors in turn, then build a unique sample ID
+ifnb$pseudoDonor = paste0("pseudoDonor_", rep(1:4, length.out = ncol(ifnb)))
+ifnb$sample      = paste0(ifnb$pseudoDonor, "_", ifnb$stim)
 ```
 
-## Step 0b: Test sample removal
-We will remove a sample to demonstrate how to handle sample imbalance
-```{r}
+## Step 2: Create an unpaired sample
+
+We remove the stimulated sample of pseudo donor 4. This donor now has only a control sample, to show how to handle imbalanced pairs.
+
+```{r remove-sample}
 ifnb = subset(ifnb, subset = sample != "pseudoDonor_4_STIM")
 table(ifnb$pseudoDonor, ifnb$stim)
 ```
 
+## Step 3: Confirm the pairing structure
 
-## Step 1: Confirm pairing structure
-Next, we want to make sure that we have complete pairing in this dataset. 
-```{r}
+`confirmPairs()` returns `TRUE` only when every pair has exactly two samples. Here it returns `FALSE` because pseudo donor 4 has one sample.
+
+```{r confirm-pairs}
 confirmPairs(ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor")
 ```
 
-## Step 2: Remove unpaired samples
-Based on step 1, we have incomplete pairing. Therefore, we're going to subset out object to only keep complete pairs
-```{r}
+## Step 4: Remove unpaired samples
+
+Because the pairing is incomplete, we keep only the complete pairs with `completePairSubset()`. You can also set `completePairsOnly = TRUE` in `generateFullMA()` to do this inside the function. The table shows that pseudo donor 4 is gone.
+
+```{r complete-pairs}
 ifnb_complete = completePairSubset(ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor")
-table(ifnb$pseudoDonor, ifnb$stim)
+table(ifnb_complete$pseudoDonor, ifnb_complete$stim)
 ```
 
-## Step 3: Run thresholding for genes that are expressed across 1% of cells in each pairing. 
-```{r}
+## Step 5: Filter lowly expressed genes
+
+`thresholdGenesAcrossPairs()` keeps genes detected in at least 1% of cells in every pair. Passing the result to `generateFullMA()` restricts the analysis to those genes.
+
+```{r threshold-genes}
 thresholdedGenes = thresholdGenesAcrossPairs(
-  seuratObject = ifnb_complete,
-  uniqueSampleID = "sample",
-  pairingColumn = "pseudoDonor",
+  seuratObject     = ifnb_complete,
+  uniqueSampleID   = "sample",
+  pairingColumn    = "pseudoDonor",
   percentThreshold = 0.01
 )
 length(thresholdedGenes)
 ```
 
-## Step 4: Run scMI and generate the metaObject object 
-```{r}
+## Step 6: Run scMetaIntegrator and build the full object
+
+`generateFullMA()` takes the same arguments as `runscMI()` and returns the full MetaIntegrator `metaObject`. Two arguments matter for this example:
+
+- `runLeaveOneOut = TRUE` runs the leave-one-out analyses that `filterGenes()` needs in step 8.
+- `maxCores = 1` limits the number of parallel processes.
+
+The per-pair expression matrices are kept by default, which the forest plot, gene scores and ROC plots need.
+
+```{r runscMI}
 scMIObj = generateFullMA(
-  seuratObject = ifnb_complete,
-  uniqueSampleID = "sample",
-  pairingColumn = "pseudoDonor",
+  seuratObject          = ifnb_complete,
+  uniqueSampleID        = "sample",
+  pairingColumn         = "pseudoDonor",
   comparisonGroupColumn = "stim",
-  groupOne = "STIM",
-  groupTwo = "CTRL",
-  thresholdGenes = thresholdedGenes
+  groupOne              = "STIM",
+  groupTwo              = "CTRL",
+  thresholdGenes        = thresholdedGenes,
+  maxCores              = 1,
+  runLeaveOneOut        = TRUE
 )
 ```
 
-## Step 5: Get detailed DE report
-```{r}
+## Step 7: Get the detailed DE report
+
+The pooled results table is stored in the object. It has the columns returned by `runscMI()` plus extra statistics, such as `tauSquared` for between-pair heterogeneity.
+
+```{r pooled-results}
 scMI_output = scMIObj$metaAnalysis$pooledResults
+head(scMI_output[order(scMI_output$effectSizeFDR), c("gene", "effectSize", "effectSizeFDR", "tauSquared", "numPairs")])
 ```
 
-## Step 6: Below are ways to analyze the data using the MetaIntegrator package
-At this moment, all MetaIntegrator functions can be performed on the metaObject generated in Step 4. A look at available methods that can be performed on this MetaIntegrator object can be found in the [MetaIntegrator vignette](http://cran.nexr.com/web/packages/MetaIntegrator/vignettes/MetaIntegrator.html). 
+## Step 8: Analyze the object with MetaIntegrator
 
-### Step 6a: Forest plot of top DEG gene
-```{r}
-topDEG = scMI_output[scMI_output$effectSizeFDR == 0 & scMI_output$tauSquared == 0,]
-topDEG = topDEG[order(topDEG$effectSize, decreasing = TRUE),]$gene[1]
+All MetaIntegrator functions work on the object from step 6. The [MetaIntegrator vignette](http://cran.nexr.com/web/packages/MetaIntegrator/vignettes/MetaIntegrator.html) lists the available methods.
+
+### Step 8a: Forest plot of the top DEG
+
+We pick the gene with the largest effect size among genes with an FDR of 0 and no heterogeneity between pairs. The forest plot shows the effect size in each pseudo donor and the pooled estimate.
+
+```{r forest-plot}
+topDEG = scMI_output[scMI_output$effectSizeFDR == 0 & scMI_output$tauSquared == 0, ]
+topDEG = topDEG[order(topDEG$effectSize, decreasing = TRUE), ]$gene[1]
 forestPlot(scMIObj, topDEG)
 ```
 
-### Step 6b: Generate gene score for IFNB per-cell using genes with FDR < 0.0001 & save score for each cell
-```{r}
-scMIObj = filterGenes(scMIObj, isLeaveOneOut = TRUE, FDRThresh = .0001)
-scMIObj$originalData$pseudoDonor_1$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1)
-scMIObj$originalData$pseudoDonor_2$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_2)
-scMIObj$originalData$pseudoDonor_3$pheno$score = calculateScore(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_3)
+### Step 8b: Build a gene signature and score each cell
+
+`filterGenes()` selects genes with an FDR below 0.0001 that remain significant when any single pair is left out. It stores the gene signature in `$filterResults`, under a name that records the filter settings. We then score each cell with the signature and save the score in the cell metadata of each pseudo donor.
+
+```{r gene-signature}
+scMIObj = filterGenes(scMIObj, isLeaveOneOut = TRUE, FDRThresh = 0.0001)
+names(scMIObj$filterResults)
+
+gene_signature = scMIObj$filterResults[["FDR1e-04_es0_nStudies1_looaTRUE_hetero0"]]
+
+for (donor in names(scMIObj$originalData)) {
+  scMIObj$originalData[[donor]]$pheno$score =
+    calculateScore(gene_signature, scMIObj$originalData[[donor]])
+}
 ```
 
-## Step 6c: Generate violin plots for identified gene signature per-sample sample
-```{r}
-violinPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1, labelColumn = 'stim')
-violinPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_2, labelColumn = 'stim')
-violinPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_3, labelColumn = 'stim')
+### Step 8c: Violin plots of the signature score
+
+```{r violin-plots}
+violinPlot(gene_signature, scMIObj$originalData$pseudoDonor_1, labelColumn = "stim")
+violinPlot(gene_signature, scMIObj$originalData$pseudoDonor_2, labelColumn = "stim")
+violinPlot(gene_signature, scMIObj$originalData$pseudoDonor_3, labelColumn = "stim")
 ```
 
-## Step 6d: Generate rocPlot for one sample using gene signature
-```{r}
-rocPlot(scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`, scMIObj$originalData$pseudoDonor_1, title = "ROC plot for discovery psudoDonor_1, FDR: 0.0001")
+### Step 8d: ROC plot for one pseudo donor
+
+```{r roc-plot}
+rocPlot(gene_signature, scMIObj$originalData$pseudoDonor_1,
+        title = "ROC plot for discovery pseudoDonor_1, FDR: 0.0001")
 ```
 
-## Step 6e: Generate pooled ROC across all pseudoDonors using gene signature
-```{r}
-pooledROCPlot(scMIObj, scMIObj$filterResults$`FDR1e-04_es0_nStudies1_looaTRUE_hetero0`)
+### Step 8e: Pooled ROC across all pseudo donors
+
+```{r pooled-roc}
+pooledROCPlot(scMIObj, gene_signature)
 ```
-
-
-##

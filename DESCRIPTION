@@ -1,18 +1,21 @@
 Package: scMetaIntegrator
 Type: Package
 Title: scMetaIntegrator: a meta-analysis approach to paired single-cell differential expression analysis
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     person("Kalani", "Ratnasiri", , "kalanir@stanford.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-5953-0004"))
 Description: Run single-cell MetaIntegrator on a Seurat Object to generate DE analysis on paired scRNA-seq data.
-License: `use_mit_license()`
+License: MIT + file LICENSE
+URL: https://khatri-lab.github.io/scMetaIntegrator/,
+    https://github.com/Khatri-Lab/scMetaIntegrator
+BugReports: https://github.com/Khatri-Lab/scMetaIntegrator/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Imports: MetaIntegrator, Seurat (>= 5.0.0), multtest, magrittr
+RoxygenNote: 7.3.3
+Imports: MetaIntegrator, Seurat (>= 5.0.0), multtest
 Depends: R (>= 4.0)
-Suggests: ggplot2, EnhancedVolcano, knitr, rmarkdown
+Suggests: ggplot2, ggrepel, ifnb.SeuratData, knitr, rmarkdown
+Remotes: satijalab/seurat-data
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-02-24 22:13:01 UTC; kalanir

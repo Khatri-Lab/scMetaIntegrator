@@ -1,26 +1,49 @@
 ---
-title: "Example1_MetaAnalysis"
+title: "Example 1: Differential expression with runscMI()"
 author: "Kalani Ratnasiri"
-date: "2025-02-24"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Example1_MetaAnalysis}
+  %\VignetteIndexEntry{Example 1: Differential expression with runscMI()}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r chunk-options, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  collapse   = TRUE,
+  comment    = "#>",
+  fig.width  = 8,
+  fig.height = 6,
+  warning    = FALSE
 )
-knitr::opts_chunk$set(fig.width=8, fig.height=6, warning = FALSE) 
 ```
 
-## Install packages as necessary
-```{r installs, include = FALSE}
-# install.packages("https://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.0.0.tar.gz", repos = NULL, type = "source")
+## Overview
+
+This example runs a complete scMetaIntegrator (scMI) analysis on a public dataset and returns a table of differentially expressed genes (DEGs). It uses `runscMI()`, the simplest entry point. `runscMI()` returns one row per gene with the pooled effect size and its significance. Example 2 shows how to get the full MetaIntegrator object for forest plots and gene scores.
+
+scMI is designed for paired designs, such as where the same donor is measured under two conditions. Each donor is analyzed as its own study, and the results are pooled across donors with random-effects meta-analysis. This keeps the donor as the unit of replication and avoids treating cells from one donor as independent replicates.
+
+The workflow has four steps:
+
+| Step | Function | Purpose |
+|:--|:--|:--|
+| 1 | `NormalizeData()` and metadata setup | Prepare a log-normalized Seurat object with a sample, a pairing and a condition column |
+| 2 | `confirmPairs()` | Check that every pair has exactly two samples |
+| 3 | `thresholdGenesAcrossPairs()` | Keep genes expressed in at least 1% of cells in every pair |
+| 4 | `runscMI()` | Pool per-pair effect sizes into one result per gene |
+
+## Setup
+
+The example data come from the `ifnb.SeuratData` package. Install it once if you do not have it.
+
+```{r install, eval = FALSE}
+install.packages("https://seurat.nygenome.org/src/contrib/ifnb.SeuratData_3.0.0.tar.gz",
+                 repos = NULL, type = "source")
 ```
+
+Loading MetaIntegrator is required to run scMetaIntegrator. ggplot2 and ggrepel are only used for the plots at the end.
 
 ```{r setup, message = FALSE}
 library(scMetaIntegrator)
@@ -28,84 +51,145 @@ library(Seurat)
 library(ifnb.SeuratData)
 library(MetaIntegrator)
 library(multtest)
-library(magrittr)
 
-## packages for extra visualization steps
+## packages for the plots in step 5
 library(ggplot2)
-library(EnhancedVolcano)
+library(ggrepel)
+theme_set(theme_bw())
 ```
 
-## Step 0: Data Loading + Pre-processing
-To get data to work with, we are going to take a publicly available dataset through SeuratData. We will assign cells to 3 pseudo donors to have a variable to pair on. 
-```{r, message=FALSE}
+## Step 1: Load and preprocess the data
+
+The `ifnb` dataset contains PBMCs that were either stimulated with interferon beta (`STIM`) or left as controls (`CTRL`). The dataset does not record donors, so we assign each cell to one of three pseudo donors. This gives us a pairing variable for the demonstration. In your own data, use the real donor or patient ID.
+
+scMI needs three metadata columns:
+
+| Column | What it holds | Column in this example |
+|:--|:--|:--|
+| Unique sample ID | One value per sample | `sample` |
+| Pairing variable | The value shared by the two samples of a pair | `pseudoDonor` |
+| Comparison variable | The two conditions to compare | `stim` |
+
+scMI also needs log-normalized expression in the `data` layer, which `NormalizeData()` creates.
+
+```{r load-data, message = FALSE}
 data("ifnb")
-ifnb<-UpdateSeuratObject(ifnb)
+ifnb = UpdateSeuratObject(ifnb)
 ifnb = NormalizeData(ifnb)
-ifnb@meta.data$pseudoDonor = rep(c(1,2,3), nrow(ifnb@meta.data)/2)[c(1:nrow(ifnb@meta.data))] ## randomly assign donor
-ifnb@meta.data$pseudoDonor = paste0("pseudoDonor_",ifnb@meta.data$pseudoDonor)
-ifnb@meta.data$sample = paste0(ifnb@meta.data$pseudoDonor,"_",ifnb@meta.data$stim)
+
+## assign cells to three pseudo donors in turn, then build a unique sample ID
+ifnb$pseudoDonor = paste0("pseudoDonor_", rep(1:3, length.out = ncol(ifnb)))
+ifnb$sample      = paste0(ifnb$pseudoDonor, "_", ifnb$stim)
+
+table(ifnb$pseudoDonor, ifnb$stim)
 ```
 
+## Step 2: Confirm the pairing structure
 
-## Step 1: Confirm pairing structure
-Next, we want to make sure that we have complete pairing in this dataset. 
-```{r}
+`confirmPairs()` returns `TRUE` when every pair has exactly two samples, one per condition. If it returns `FALSE`, use `completePairSubset()` to keep only the complete pairs, or set `completePairsOnly = TRUE` in `runscMI()`.
+
+```{r confirm-pairs}
 confirmPairs(ifnb, uniqueSampleID = "sample", pairingColumn = "pseudoDonor")
 ```
 
-## Step 2: Run thresholding for genes that are expressed across 1% of cells in each pairing. 
-```{r}
+## Step 3: Filter lowly expressed genes
+
+Genes that are barely detected add noise and extra tests. `thresholdGenesAcrossPairs()` keeps genes detected in at least 1% of cells in every pair. Passing the result to `runscMI()` restricts the analysis to those genes.
+
+```{r threshold-genes}
 thresholdedGenes = thresholdGenesAcrossPairs(
-  seuratObject = ifnb,
-  uniqueSampleID = "sample",
-  pairingColumn = "pseudoDonor",
+  seuratObject     = ifnb,
+  uniqueSampleID   = "sample",
+  pairingColumn    = "pseudoDonor",
   percentThreshold = 0.01
 )
 length(thresholdedGenes)
 ```
 
+## Step 4: Run scMetaIntegrator
 
-## Step 3: Now we want to run scMetaIntegrator and get the simplest DE output.
-### For calculating effect size changes, groupOne is the group we're defining changes distinguishing these cells from groupTwo (usually the control sample)
+`groupOne` is the condition whose effect you want to estimate, and `groupTwo` is the reference, usually the control. A positive effect size means higher expression in `groupOne`.
+
 ```{r runscMI}
 scMI_output = runscMI(
-  seuratObject = ifnb,
-  uniqueSampleID = "sample",
-  pairingColumn = "pseudoDonor",
+  seuratObject          = ifnb,
+  uniqueSampleID        = "sample",
+  pairingColumn         = "pseudoDonor",
   comparisonGroupColumn = "stim",
-  groupOne = "STIM",
-  groupTwo = "CTRL",
-  thresholdGenes = thresholdedGenes
+  groupOne              = "STIM",
+  groupTwo              = "CTRL",
+  thresholdGenes        = thresholdedGenes
 )
+head(scMI_output[order(scMI_output$effectSizeFDR), ])
 ```
 
-## Step 4: Below are basic checks & visualizations of the output data
-### 4a: Get the number of significant DEGs
-```{r}
-table(scMI_output$effectSizeFDR < 0.05)
+The output has one row per gene with these columns:
+
+| Column | Meaning |
+|:--|:--|
+| `gene` | Gene name |
+| `effectSize` | Pooled effect size (Hedges' g) across pairs |
+| `effectSizePval` | P-value of the pooled effect size |
+| `effectSizeFDR` | Benjamini-Hochberg adjusted p-value |
+| `effectSizeBF` | Bonferroni adjusted p-value |
+| `numPairs` | Number of pairs that contributed to the estimate |
+
+## Step 5: Check and visualize the results
+
+### Count the significant genes
+
+```{r count-degs}
+table(Significant = scMI_output$effectSizeFDR < 0.05,
+      Direction   = ifelse(scMI_output$effectSize > 0, "positive", "negative"))
 ```
 
+### Bar plot of DEGs
 
-### 4b: Get a simple barplot of DEGs
-```{r}
-scMI_output$direction = ifelse(scMI_output$effectSize > 0, "positive","negative")
-scMI_output$direction = ifelse(scMI_output$effectSize == 0, "0",scMI_output$direction)
-scMI_output$significant = ifelse(scMI_output$effectSizeFDR < 0.05, "TRUE","FALSE")
+```{r barplot}
+scMI_output$direction = ifelse(scMI_output$effectSize > 0, "positive",
+                        ifelse(scMI_output$effectSize < 0, "negative", "zero"))
+scMI_output$significant = scMI_output$effectSizeFDR < 0.05
 
-ggplot(scMI_output, aes(x=significant, fill = direction)) +
-  geom_bar() + theme_bw() + xlab("FDR < 0.05") + ylab("# of DEGs") +
-  labs(fill="sign(effectSize)") + scale_fill_manual(values = c("#16317DFF", "#A40000FF"))
+ggplot(scMI_output, aes(x = significant, fill = direction)) +
+  geom_bar() +
+  scale_fill_manual(values = c(positive = "#A40000FF", negative = "#16317DFF", zero = "grey60")) +
+  labs(x = "FDR < 0.05", y = "Number of genes", fill = "sign(effectSize)")
 ```
 
+### Volcano plot of DEGs
 
-### 4b: Get a simple volcano plot of DEGs
-```{r}
-EnhancedVolcano(scMI_output,
-    lab = scMI_output$gene,
-    x = 'effectSize',
-    y = 'effectSizeFDR',
-    pCutoff = 10e-32,
-    FCcutoff = 0.5,
-    pointSize = 3.0,
-    labSize = 6.0)
+The volcano plot shows the pooled effect size against the significance of each gene. Genes with an FDR below 0.05 and an absolute effect size above 0.5 are colored. We label the five genes with the largest effect size in each direction. FDR values of 0 are set to 1e-300 so they can be plotted on a log scale.
+
+```{r volcano, fig.width = 7, fig.height = 5.5, message = FALSE}
+volcano_df = scMI_output
+volcano_df$neg_log10_fdr = -log10(pmax(volcano_df$effectSizeFDR, 1e-300))
+volcano_df$category = ifelse(volcano_df$effectSizeFDR < 0.05 & volcano_df$effectSize >  0.5, "Up in STIM",
+                      ifelse(volcano_df$effectSizeFDR < 0.05 & volcano_df$effectSize < -0.5, "Up in CTRL",
+                             "Not significant"))
+volcano_df$category = factor(volcano_df$category,
+                             levels = c("Up in STIM", "Up in CTRL", "Not significant"))
+
+## label the top 5 genes by effect size in each direction
+sig_df    = volcano_df[volcano_df$category != "Not significant", ]
+label_df  = rbind(head(sig_df[order(-sig_df$effectSize), ], 5),
+                  head(sig_df[order( sig_df$effectSize), ], 5))
+
+ggplot(volcano_df, aes(x = effectSize, y = neg_log10_fdr, color = category)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_vline(xintercept = c(-0.5, 0.5), linetype = "dashed", color = "grey50") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "grey50") +
+  geom_text_repel(data = label_df, aes(label = gene),
+                           color = "black", size = 3.5, max.overlaps = Inf,
+                           box.padding = 0.5, segment.color = "grey60") +
+  scale_color_manual(values = c("Up in STIM"      = "#A40000FF",
+                                "Up in CTRL"      = "#16317DFF",
+                                "Not significant" = "grey70")) +
+  labs(x = "Pooled effect size (Hedges' g)",
+       y = expression(-log[10](FDR)),
+       color = NULL) +
+  theme(legend.position = "top")
 ```
+
+## Next steps
+
+Example 2 uses `generateFullMA()` to return the full MetaIntegrator object. It shows forest plots, gene scores and leave-one-out filtering. The function reference documents every argument.

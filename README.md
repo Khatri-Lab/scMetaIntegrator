@@ -1,6 +1,7 @@
 # scMetaIntegrator
 scMetaIntegrator: a meta-analysis approach to paired single-cell differential expression analysis\
-Preprint: [https://doi.org/10.1101/2025.06.04.657898](https://doi.org/10.1101/2025.06.04.657898)
+Preprint: [https://doi.org/10.1101/2025.06.04.657898](https://doi.org/10.1101/2025.06.04.657898)\
+Documentation: [https://khatri-lab.github.io/scMetaIntegrator/](https://khatri-lab.github.io/scMetaIntegrator/)
 
 ## Goal
 scMetaIntegrator aims to provide a method for differential expresion analysis that can handle paired scRNA-seq data. 
@@ -25,5 +26,12 @@ install.packages("https://cran.r-project.org/src/contrib/Archive/MetaIntegrator/
 ```
 We are working on getting MetaIntegrator back on CRAN and building scMetaIntegrator into the existing package. Updates will follow soon.
 
-## Vignettes
-Vignettes are available in the vignettes directory of this repo.
+## Documentation and vignettes
+The documentation site has the function reference and examples to get started:
+
+* [Getting started](https://khatri-lab.github.io/scMetaIntegrator/articles/scMetaIntegrator.html)
+* [Example 1: Differential expression with runscMI()](https://khatri-lab.github.io/scMetaIntegrator/articles/Example1_scMetaIntegrator.html)
+* [Example 2: Full MetaIntegrator analysis with generateFullMA()](https://khatri-lab.github.io/scMetaIntegrator/articles/Example2_scMetaIntegrator.html)
+* [Function reference](https://khatri-lab.github.io/scMetaIntegrator/reference/index.html)
+
+The vignette source files are also in the `vignettes` directory of this repo.
